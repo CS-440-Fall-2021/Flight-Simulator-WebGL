@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        #version 300 es
+
+        in vec3 vPosition;
+        in vec3 vColor;
+
+        uniform mat4 mWorld;
+        uniform mat4 mView;
+        uniform mat4 mProj;
+
+        out vec3 fragColor;
+
+        void main() {
+            gl_Position = mProj * mView * mWorld * vec4(vPosition, 1.0);
+            fragColor = vColor;
+        }
+    </script>
+    
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        #version 300 es
+
+        precision highp float;
+
+        in vec3 fragColor;
+        out vec4 vertexColor;
+
+        void main() {
+            vertexColor = vec4(fragColor, 1.0);
+        }
+    </script>
+
+
+    <script src="./MVES6.js"></script>
+    <script src="./initShadersES6.js"></script>
+    <title>Practice</title>
+</head>
+<body>
+    <canvas width="512" height="512" id="webgl-canvas">
+        Your browser doesn't support HTML5.
+    </canvas>
+    <script src="./practice.js"></script>
+</body>
+</html>
