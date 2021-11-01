@@ -64,7 +64,7 @@ function get_patch(x_min, x_max, z_min, z_max){
             // }
             
             b_y = perlin.get(x, z + z_interval); 
-            B = vec3(x, b_y, z + z_interval); b = vec3(1,1,1);
+            B = vec3(x, b_y, z + z_interval); b = vec3(0,0,0);
             // if (b_y <= 0.5){ 
             //     b = vec3(0, 0, 1);
             // }
@@ -82,7 +82,7 @@ function get_patch(x_min, x_max, z_min, z_max){
             // }
 
             d_y = perlin.get(x + x_interval, z);  
-            D = vec3(x + x_interval, d_y  , z); d = vec3(1,1,1);
+            D = vec3(x + x_interval, d_y  , z); d = vec3(0,0,0);
             // if (d_y <= 0.5){ 
             //     d = vec3(0, 0, 1);
             // }
@@ -114,15 +114,18 @@ sendDataToGPU();
 var matWorldUniformLocation = gl.getUniformLocation(program, "mWorld"); // deals with rotation
 var matViewUniformLocation = gl.getUniformLocation(program, "mView"); // deals with camera
 var matProjUniformLocation = gl.getUniformLocation(program, "mProj"); // deals with 3D to 2D projection
+var colorValueUniformLocation = gl.getUniformLocation(program, "colorValue");
 
 var worldMatrix = mat4();
 var viewMatrix = lookAt(vec3(0, 3, 3), vec3(0, 0, 0), vec3(0, 1, 0));
 var projMatrix = perspective(45, canvas.width / canvas.height, 0.1, 1000.0);
+var colorValue = 1.0;
 
 // Send matrix data to GPU
 gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, flatten(worldMatrix));
 gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, flatten(viewMatrix));
 gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));
+gl.uniform1f(colorValueUniformLocation, gl.FALSE, colorValue);
 
 var angle = 0;
 var identityMatrix = mat4();
@@ -144,6 +147,10 @@ var loop = function() {
 requestAnimationFrame(loop);
 gl.drawArrays(gl.TRIANGLE, 0, points.length);
 
+colorValue = 1.0;
+gl.uniform1f(colorValueUniformLocation, gl.FALSE, colorValue);
+gl.drawArrays(gl.LINE_LOOP, 0, points.length);
+
 
 function sendDataToGPU() {
     // Send vertex data to GPU
@@ -156,10 +163,10 @@ function sendDataToGPU() {
 
 
     // Send color data to GPU
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
+    // gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    // gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
 
-    var vColor = gl.getAttribLocation(program, "vColor");
-    gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vColor);
+    // var vColor = gl.getAttribLocation(program, "vColor");
+    // gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
+    // gl.enableVertexAttribArray(vColor);
 }
