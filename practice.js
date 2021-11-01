@@ -17,97 +17,40 @@ gl.useProgram(program);
 
 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-// vertices
-var A = vec3(-1.0, 0.0, 1.0);
-var B = vec3(1.0, 0.0, 1.0);
-var C = vec3(1.0, 0.0, -1.0);
-var D = vec3(-1.0, 0.0, -1.0);
-var E = vec3(0.0, 1.0, 0.0);
-
-// vertix colors
-var a = vec3(1.0, 0.0, 0.0);  // R
-var b = vec3(1.0, 0.0, 0.0);  // G 
-var c = vec3(1.0, 0.0, 0.0);  // R
-var d = vec3(1.0, 0.0, 0.0);  // B
-var e = vec3(1.0, 1.0, 0.0);  // Y
-
-
-
-
-// var colors = [a, b, e, b, c, e, c, d, e, d, a, e];
-
-// var points = [A, B, E, B, C, E, C, D, E, D, A, E];
 
 var points = []; var colors = [];
-
-function get_height(){
-    return 3*Math.random();         // will return values in the range [3, 0)
-}
-
 
 
 function get_patch(x_min, x_max, z_min, z_max){
     var x = x_min; var z = z_min;
     var x_interval = (x_max - x_min)/100; var z_interval = (z_max - z_min)/100;
     
-    var z_off = 0;
     for (let j= 0; j < 100; j ++){
-        var x_off = 0;
         for (let i = 0; i < 100; i++){
             a_y = perlin.get(x, z); 
             A = vec3(x, a_y, z); a = vec3(0,0,0);
-            // if (a_y <= 0.5){ 
-            //     a = vec3(0, 0, 1);
-            // }
-            // else{
-            //     a = vec3(1,0,0);
-            // }
             
             b_y = perlin.get(x, z + z_interval); 
             B = vec3(x, b_y, z + z_interval); b = vec3(0,0,0);
-            // if (b_y <= 0.5){ 
-            //     b = vec3(0, 0, 1);
-            // }
-            // else{
-            //     b = vec3(1,0,0);
-            // }
-
+            
             c_y = perlin.get(x + x_interval, z + z_interval);
             C = vec3(x + x_interval, c_y, z + z_interval); c = vec3(0,0,0);
-            // if (c_y <= 0.5){ 
-            //     c = vec3(0, 0, 1);
-            // }
-            // else{
-            //     c = vec3(1,0,0);
-            // }
-
+            
             d_y = perlin.get(x + x_interval, z);  
             D = vec3(x + x_interval, d_y  , z); d = vec3(0,0,0);
-            // if (d_y <= 0.5){ 
-            //     d = vec3(0, 0, 1);
-            // }
-            // else{
-            //     d = vec3(1,0,0);
-            // }
-
+            
             points.push(A,B,D,B,C,D);
             colors.push(a,b,d,b,c,d);
             x = x + x_interval;
-            x_off = x_off + 0.1;
         }
         x = x_min;
         z = z + z_interval;
-        z_off = z_off + 1;
     }  
     console.log(points);
 }
 
 get_patch(-2, 2, -4, 4);
 
-
-
-
-// var i = 0;
 
 sendDataToGPU();
 
