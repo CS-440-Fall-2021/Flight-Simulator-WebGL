@@ -6,25 +6,19 @@
         #version 300 es
 
         in vec3 vPosition;
-        in vec3 vColor;
+        // in vec3 vColor;
 
         uniform mat4 mWorld;
         uniform mat4 mView;
         uniform mat4 mProj;
 
-        uniform float colorValue;
+        uniform vec3 colorValue;
 
         out vec3 fragColor;
 
         void main() {
             gl_Position = mProj * mView * mWorld * vec4(vPosition, 1.0);
-            gl_PointSize = 2.0;
-             if (colorValue == 0.0) {
-               fragColor = vec3(0.0, 0.0, 0.0);
-             }
-             else if (colorValue == 1.0) {
-               fragColor = vec3(1.0, 1.0, 1.0);
-             }
+            fragColor = colorValue;
         }
     </script>
     

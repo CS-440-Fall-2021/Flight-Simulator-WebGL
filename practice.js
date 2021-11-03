@@ -3,6 +3,10 @@ let canvas = document.getElementById("webgl-canvas");
 let gl = canvas.getContext("webgl2");
 let program;
 
+let ENABLE_PERLIN = false;
+let ENABLE_ROUNDING = true;
+let TERRAIN_DETAIL_LEVEL = 10;
+
 // Init WebGL
 gl.viewport(0, 0, canvas.width, canvas.height);
 gl.clearColor(0.75, 0.85, 0.8, 1.0);
@@ -18,38 +22,49 @@ gl.useProgram(program);
 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 
-var points = []; var colors = [];
+var points = []; var colors = []; var matrix = []; var temp = [];
 
 
 function get_patch(x_min, x_max, z_min, z_max){
     var x = x_min; var z = z_min;
-    var x_interval = (x_max - x_min)/100; var z_interval = (z_max - z_min)/100;
+    var x_interval = (x_max - x_min)/TERRAIN_DETAIL_LEVEL; var z_interval = (z_max - z_min)/TERRAIN_DETAIL_LEVEL;
+
+    console.log(x_interval);
     
-    for (let j= 0; j < 100; j ++){
-        for (let i = 0; i < 100; i++){
-            a_y = perlin.get(x, z); 
+    var temp_points = [];
+
+    for (let j= 0; j < TERRAIN_DETAIL_LEVEL; j ++){
+        for (let i = 0; i < TERRAIN_DETAIL_LEVEL; i++){
+            
+            a_y = ENABLE_PERLIN ? perlin.get(x, z) : 0; 
             A = vec3(x, a_y, z); a = vec3(0,0,0);
             
-            b_y = perlin.get(x, z + z_interval); 
-            B = vec3(x, b_y, z + z_interval); b = vec3(0,0,0);
+            b_y = ENABLE_PERLIN ? perlin.get(x, round(z + z_interval)) : 0; 
+            B = vec3(x, b_y, round(z + z_interval)); b = vec3(0,0,0);
             
-            c_y = perlin.get(x + x_interval, z + z_interval);
-            C = vec3(x + x_interval, c_y, z + z_interval); c = vec3(0,0,0);
+            c_y = ENABLE_PERLIN ? perlin.get(round(x + x_interval), round(z + z_interval)) : 0;
+            C = vec3(round(x + x_interval), c_y, round(z + z_interval)); c = vec3(0,0,0);
             
-            d_y = perlin.get(x + x_interval, z);  
-            D = vec3(x + x_interval, d_y  , z); d = vec3(0,0,0);
+            d_y = ENABLE_PERLIN ? perlin.get(round(x + x_interval), z) : 0;  
+            D = vec3(round(x + x_interval), d_y  , z); d = vec3(0,0,0);
             
+            temp_points.push(A,B,D,B,C,D);
             points.push(A,B,D,B,C,D);
+            matrix.push(temp_points);
+            console.log(temp_points);
+            temp_points = [];
+
             colors.push(a,b,d,b,c,d);
-            x = x + x_interval;
+            x = round(x + x_interval);
         }
         x = x_min;
-        z = z + z_interval;
+        z = round(z + z_interval);
+        // console.log(points);
     }  
-    console.log(points);
 }
 
 get_patch(-2, 2, -4, 4);
+temp = points;
 
 
 sendDataToGPU();
@@ -60,15 +75,15 @@ var matProjUniformLocation = gl.getUniformLocation(program, "mProj"); // deals w
 var colorValueUniformLocation = gl.getUniformLocation(program, "colorValue");
 
 var worldMatrix = mat4();
-var viewMatrix = lookAt(vec3(0, 3, 3), vec3(0, 0, 0), vec3(0, 1, 0));
+var viewMatrix = lookAt(vec3(0, 5, 3), vec3(0, 0, 0), vec3(0, 1, 0));
 var projMatrix = perspective(45, canvas.width / canvas.height, 0.1, 1000.0);
-var colorValue = 1.0;
+var colorValue = vec3(1.0, 1.0, 1.0);
 
 // Send matrix data to GPU
 gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, flatten(worldMatrix));
 gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, flatten(viewMatrix));
 gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));
-gl.uniform1f(colorValueUniformLocation, gl.FALSE, colorValue);
+gl.uniform3f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2]);
 
 var angle = 0;
 var identityMatrix = mat4();
@@ -83,17 +98,27 @@ var loop = function() {
     gl.clearColor(0.75, 0.85, 0.8, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    colorValue = vec3(0.0, 0.0, 0.0);
+    gl.uniform3f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2]);
+
+    points = temp;
+    sendDataToGPU();
     gl.drawArrays(gl.TRIANGLES, 0, points.length);
+
+    colorValue = vec3(1.0, 1.0, 1.0);
+    gl.uniform3f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2]);
+
+    temp = points;
+    for (let i = 0; i < matrix.length; i++) {
+        points = matrix[i];
+        sendDataToGPU();
+        gl.drawArrays(gl.LINE_STRIP, 0, points.length);
+    }
+    
     requestAnimationFrame(loop);
 }
 
 requestAnimationFrame(loop);
-gl.drawArrays(gl.TRIANGLE, 0, points.length);
-
-colorValue = 1.0;
-gl.uniform1f(colorValueUniformLocation, gl.FALSE, colorValue);
-gl.drawArrays(gl.LINE_LOOP, 0, points.length);
-
 
 function sendDataToGPU() {
     // Send vertex data to GPU
@@ -112,4 +137,17 @@ function sendDataToGPU() {
     // var vColor = gl.getAttribLocation(program, "vColor");
     // gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
     // gl.enableVertexAttribArray(vColor);
+}
+
+function round(n) {
+    if (ENABLE_ROUNDING) {
+    var temp = n.toFixed(1);
+    if (temp == "0.0") {
+        return 0.0;
+    } else {
+        return parseFloat(temp);
+    }
+    } else {
+        return n;
+    }
 }
