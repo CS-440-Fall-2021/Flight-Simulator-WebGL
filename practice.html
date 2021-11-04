@@ -12,11 +12,12 @@
         uniform mat4 mView;
         uniform mat4 mProj;
 
-        uniform vec3 colorValue;
+        uniform vec4 colorValue;
 
-        out vec3 fragColor;
+        out vec4 fragColor;
 
         void main() {
+            gl_PointSize = 2.0;
             gl_Position = mProj * mView * mWorld * vec4(vPosition, 1.0);
             fragColor = colorValue;
         }
@@ -27,11 +28,11 @@
 
         precision highp float;
 
-        in vec3 fragColor;
+        in vec4 fragColor;
         out vec4 vertexColor;
 
         void main() {
-            vertexColor = vec4(fragColor, 1.0);
+            vertexColor = fragColor;
         }
     </script>
 
@@ -41,7 +42,7 @@
     <title>Practice</title>
 </head>
 <body>
-    <canvas width="512" height="512" id="webgl-canvas">
+    <canvas width="1280" height="720" id="webgl-canvas">
         Your browser doesn't support HTML5.
     </canvas>
     <script src='http://joeiddon.github.io/perlin/perlin.js'></script>
