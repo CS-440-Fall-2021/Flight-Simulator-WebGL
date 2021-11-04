@@ -3,17 +3,39 @@ let canvas = document.getElementById("webgl-canvas");
 let gl = canvas.getContext("webgl2");
 let program;
 
+let id = null;
 let ENABLE_PERLIN = true;
 let ENABLE_ROUNDING = false;
 let TERRAIN_DETAIL_LEVEL = 200;
 let MESH_ELEVATION = 0;
-let TERRAIN_BOUNDS = 20;
+let TERRAIN_BOUNDS = 25;
+
+let RIGHT = 10;
+let LEFT = -10;
+let BOTTOM = 0.0;
+let TOP = 10;
 let NEAR = 0.1;
 let FAR = 1000.0;
-let PERLIN_SCALING_FACTOR = 2.0;
-let FLYING_SPEED = 1.0;
+
+let SHIFT_SENSITIVITY = 1;
+
+let PERLIN_SCALING_FACTOR = 1.0;
+
 let YAW_SENSITIVITY = 1;
-let YAW_CONTROL = false;
+let YAW_CONTROL = true;
+let YAW_ANGLE = 0;
+
+let PITCH_SENSITIVITY = 1;
+let PITCH_CONTROL = true;
+let PITCH_ANGLE = 0;
+
+let ROLL_SENSITIVITY = 1;
+let ROLL_CONTROL = true;
+let ROLL_ANGLE = 90 * Math.PI/180;
+
+let FLYING_SPEED = 2.0;
+let MAX_SPEED = 5;
+let SPEED_SENSITIVITY = 1;
 
 // Init WebGL
 gl.viewport(0, 0, canvas.width, canvas.height);
@@ -38,12 +60,82 @@ gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 window.onload = () => {
     document.onkeydown = (e) => {
-        if (e.key === "a" || e.key === "A") {
-            angle = angle + (YAW_CONTROL ? YAW_SENSITIVITY : 0);
+        console.log(e.key)
+
+        if (YAW_ANGLE - radians(YAW_SENSITIVITY)> -Math.PI/2  &&  (e.key === "a" || e.key === "A")) {
+            YAW_ANGLE = YAW_ANGLE - (YAW_CONTROL ? radians(YAW_SENSITIVITY) : 0);
+            console.log(YAW_ANGLE*180/Math.PI);
         }
-        else if (e.key === "d" || e.key === "D") {
-            angle = angle - (YAW_CONTROL ? YAW_SENSITIVITY : 0);
+        else if (YAW_ANGLE + radians(YAW_SENSITIVITY) < Math.PI/2  && (e.key === "d" || e.key === "D")) {
+            YAW_ANGLE = YAW_ANGLE + (YAW_CONTROL ? radians(YAW_SENSITIVITY) : 0);
+            console.log(YAW_ANGLE*180/Math.PI);
         }
+        else if (PITCH_ANGLE + radians(PITCH_SENSITIVITY) < Math.PI/2 && (e.key === "w" || e.key === "W")) {
+            PITCH_ANGLE = PITCH_ANGLE + (PITCH_CONTROL ? radians(PITCH_SENSITIVITY) : 0);
+            console.log(PITCH_ANGLE*180/Math.PI)
+        }
+        else if (PITCH_ANGLE - radians(PITCH_SENSITIVITY) > -Math.PI/2 && (e.key === "s" || e.key === "S")) {
+            
+            PITCH_ANGLE = PITCH_ANGLE - (PITCH_CONTROL ? radians(PITCH_SENSITIVITY) : 0);
+            console.log(PITCH_ANGLE*180/Math.PI)
+        }
+        else if (ROLL_ANGLE + radians(ROLL_SENSITIVITY) <= Math.PI && (e.key === "q" || e.key === "Q")) {
+            ROLL_ANGLE = ROLL_ANGLE + (ROLL_CONTROL ? radians(ROLL_SENSITIVITY) : 0);
+            console.log(ROLL_ANGLE*180/Math.PI)
+        }
+        else if (ROLL_ANGLE- radians(ROLL_SENSITIVITY) >=0 && (e.key === "e" || e.key === "E")) {
+            ROLL_ANGLE = ROLL_ANGLE - (ROLL_CONTROL ?radians(ROLL_SENSITIVITY) : 0);
+            console.log(ROLL_ANGLE*180/Math.PI)
+        }
+    
+        else if (e.key === "1" && LEFT + SHIFT_SENSITIVITY<= 0){ 
+            LEFT += SHIFT_SENSITIVITY;
+        }
+        else if(e.key === "!" && LEFT - SHIFT_SENSITIVITY>= -30){
+            LEFT -= SHIFT_SENSITIVITY;
+        }
+        else if (e.key === "2" && RIGHT + SHIFT_SENSITIVITY<=30 ){ 
+            RIGHT += SHIFT_SENSITIVITY;
+        }
+        else if(e.key === "@" && RIGHT - SHIFT_SENSITIVITY>= 0){
+            RIGHT -= SHIFT_SENSITIVITY;
+        }
+        else if (e.key === "3" && TOP + SHIFT_SENSITIVITY<= 15){ 
+            TOP += SHIFT_SENSITIVITY;
+        }
+        else if(e.key === "#" && TOP - SHIFT_SENSITIVITY>= 2){
+            TOP -= SHIFT_SENSITIVITY;
+        }
+        else if (e.key === "4" && BOTTOM + SHIFT_SENSITIVITY<= 4){ 
+            BOTTOM += SHIFT_SENSITIVITY;
+        }
+        else if(e.key === "$" && BOTTOM - SHIFT_SENSITIVITY>= 0){
+            BOTTOM -= SHIFT_SENSITIVITY;
+        }
+        else if (e.key === "5" && NEAR + SHIFT_SENSITIVITY<= 100){ 
+            NEAR += SHIFT_SENSITIVITY;
+        }
+        else if(e.key === "%" && NEAR - SHIFT_SENSITIVITY>= 0){
+            NEAR -= SHIFT_SENSITIVITY;
+        }
+        else if (e.key === "6" && FAR + SHIFT_SENSITIVITY<= 1000){ 
+            FAR += SHIFT_SENSITIVITY;
+        }
+        else if(e.key==="^" && FAR - SHIFT_SENSITIVITY>=10 ){
+            FAR -= SHIFT_SENSITIVITY;
+        }
+        
+        else if (e.key === "ArrowDown" && FLYING_SPEED- SPEED_SENSITIVITY >= 0){
+            FLYING_SPEED -= SPEED_SENSITIVITY;
+            console.log(FLYING_SPEED)
+        }
+        else if (e.key === "ArrowUp" && FLYING_SPEED + SPEED_SENSITIVITY <= MAX_SPEED){
+            FLYING_SPEED += SPEED_SENSITIVITY;
+        }
+        else if (e.key === "Escape"){
+            cancelAnimationFrame(id);
+        }
+
     }
 }
 
@@ -86,7 +178,7 @@ function get_patch(x_min, x_max, z_min, z_max){
             
         }
         matrix.push(temp_points);
-        console.log(temp_points);
+        // console.log(temp_points);
         temp_points = [];
     }  
 }
@@ -102,7 +194,7 @@ var matProjUniformLocation = gl.getUniformLocation(program, "mProj"); // deals w
 var colorValueUniformLocation = gl.getUniformLocation(program, "colorValue");
 
 var worldMatrix = mat4();
-var viewMatrix = lookAt(vec3(0, 3, 10), vec3(0, 0, 0), vec3(0, 1, 0));
+var viewMatrix = lookAt(vec3(0, 3,15 ), vec3(0, 0, 0), vec3(0, 1, 0));
 var projMatrix = ortho(-10.0, 10.0, 0.0, 10.0, NEAR, FAR);
 var colorValue = vec4(1.0, 1.0, 1.0, 1.0);
 
@@ -112,26 +204,39 @@ gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, flatten(viewMatrix));
 gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));
 gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2], colorValue[3]);
 
-var motion_x = 0;
-var motion_y = 0;
-var motion_z = 0;
 var identityMatrix = mat4();
 
-// +ve angle means clockwise rotation
-var angle = 0;
-
 var loop = function() {
-    // motion_x = i / 60;
-    // motion_y = i / 60;
-    motion_z = i / 60;
+    distance = FLYING_SPEED * i / 60;
 
-    worldMatrix = rotate(angle, vec3(0, 1, 0));
-    viewMatrix = lookAt(vec3(0 - motion_x, 3 - motion_y, 10 - motion_z), vec3(0 - motion_x, 0 - motion_y, 0 - motion_z), vec3(0, 1, 0));
+    worldMatrix = rotate(YAW_ANGLE*180/Math.PI, vec3(0, 1, 0));
+
+    viewMatrix = 
+    lookAt(
+        add(vec3(0, 3, 15), mult(
+            -distance,vec3(
+                0,
+                Math.sin(PITCH_ANGLE), 
+                Math.cos(PITCH_ANGLE)
+            ))), 
+        add(vec3(0, 0, 0), mult(
+                -distance,vec3(
+                    0,
+                    Math.sin(PITCH_ANGLE), 
+                    Math.cos(PITCH_ANGLE)
+                ))),
+                vec3(
+                    Math.cos(ROLL_ANGLE),
+                    Math.cos(PITCH_ANGLE)*Math.sin(ROLL_ANGLE),
+                    Math.sin(PITCH_ANGLE)*Math.sin(ROLL_ANGLE)));
     
+    projMatrix = ortho(LEFT, RIGHT, BOTTOM , TOP , NEAR , FAR);
+
+    gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));              
     gl.uniformMatrix4fv(matViewUniformLocation, false, flatten(viewMatrix)); // Send new data to GPU
     gl.uniformMatrix4fv(matWorldUniformLocation, false, flatten(worldMatrix));
 
-    i = i + FLYING_SPEED;
+    i++;
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -155,11 +260,11 @@ var loop = function() {
         gl.drawArrays(gl.LINE_STRIP, 0, points.length);
     }
     
-    requestAnimationFrame(loop);
+    id = requestAnimationFrame(loop);
 }
 
 
-requestAnimationFrame(loop);
+id = requestAnimationFrame(loop);
 
 function sendDataToGPU() {
     // Send vertex data to GPU
