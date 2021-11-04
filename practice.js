@@ -4,11 +4,13 @@ let gl = canvas.getContext("webgl2");
 let program;
 
 let id = null;
+
 let ENABLE_PERLIN = true;
 let ENABLE_ROUNDING = false;
 let TERRAIN_DETAIL_LEVEL = 200;
 let MESH_ELEVATION = 0;
 let TERRAIN_BOUNDS = 25;
+let PERLIN_SCALING_FACTOR = 1.0;
 
 let RIGHT = 10;
 let LEFT = -10;
@@ -34,7 +36,7 @@ let ROLL_CONTROL = true;
 let ROLL_ANGLE = 90 * Math.PI/180;
 
 let FLYING_SPEED = 2.0;
-let MAX_SPEED = 5;
+let MAX_SPEED = 10;
 let SPEED_SENSITIVITY = 1;
 
 // Init WebGL
@@ -207,7 +209,7 @@ gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue
 var identityMatrix = mat4();
 
 var loop = function() {
-    distance = FLYING_SPEED * i / 60;
+    distance = i / 60;
 
     worldMatrix = rotate(YAW_ANGLE*180/Math.PI, vec3(0, 1, 0));
 
@@ -236,7 +238,7 @@ var loop = function() {
     gl.uniformMatrix4fv(matViewUniformLocation, false, flatten(viewMatrix)); // Send new data to GPU
     gl.uniformMatrix4fv(matWorldUniformLocation, false, flatten(worldMatrix));
 
-    i++;
+    i+= FLYING_SPEED;
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -253,7 +255,7 @@ var loop = function() {
     colorValue = vec4(0.75, 0.75, 0.75, 1.0);
     gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2], colorValue[3]);
 
-    temp = points;
+    // temp = points;
     for (let i = 0; i < matrix.length; i++) {
         points = matrix[i];
         sendDataToGPU();
