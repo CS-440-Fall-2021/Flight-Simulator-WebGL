@@ -12,12 +12,12 @@ let MESH_ELEVATION = 0;
 let TERRAIN_BOUNDS = 25;
 let PERLIN_SCALING_FACTOR = 2.0;
 
-let RIGHT = 10;
-let LEFT = -10;
-let BOTTOM = 0.0;
+let RIGHT = 8;
+let LEFT = -7;
+let BOTTOM = -3;
 let TOP = 10;
-let NEAR = 0.1;
-let FAR = 1000.0;
+let NEAR = 15;
+let FAR = -20.0;
 
 let SHIFT_SENSITIVITY = 1;
 
@@ -38,8 +38,8 @@ let FLYING_SPEED = 2.0;
 let MAX_SPEED = 10;
 let SPEED_SENSITIVITY = 1;
 
-let eye = vec3(0,3,15);
-let at = vec3(0,0,0);
+let eye = vec3(0,10,25);
+let at = vec3(0,0,-1);
 let up = vec3 (0,1,0);
 // Init WebGL
 gl.viewport(0, 0, canvas.width, canvas.height);
@@ -61,36 +61,71 @@ gl.useProgram(program);
 
 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+function frustum(left, right, bottom, top, near, far) {
+
+    if (left == right) { throw "frustum(): left and right are equal";}
+   
+    if (bottom == top) { throw "frustum(): bottom and top are equal";}
+   
+    if (near == far) { throw "frustum(): near and far are equal";}
+   
+    let w = right - left;
+   
+    let h = top - bottom;
+   
+    let d = far - near;
+   
+    let result = mat4();
+   
+    result[0][0] = 2.0 * near / w;
+   
+    result[1][1] = 2.0 * near / h;
+   
+    result[2][2] = -(far + near) / d;
+   
+    result[0][2] = (right + left) / w;
+   
+    result[1][2] = (top + bottom) / h;
+   
+    result[2][3] = -2 * far * near / d;
+   
+    result[3][2] = -1;
+   
+    result[3][3] = 0.0;
+   
+    return result;
+   
+   }
 
 window.onload = () => {
     document.onkeydown = (e) => {
-        console.log(e.key)
+        
 
         if (YAW_ANGLE - radians(YAW_SENSITIVITY)> -Math.PI/2  &&  (e.key === "a" || e.key === "A")) {
             YAW_ANGLE = YAW_ANGLE - (YAW_CONTROL ? radians(YAW_SENSITIVITY) : 0);
-            console.log(YAW_ANGLE*180/Math.PI);
+            
 
         }
         else if (YAW_ANGLE + radians(YAW_SENSITIVITY) < Math.PI/2  && (e.key === "d" || e.key === "D")) {
             YAW_ANGLE = YAW_ANGLE + (YAW_CONTROL ? radians(YAW_SENSITIVITY) : 0);
-            console.log(YAW_ANGLE*180/Math.PI);
+            
         }
         else if (PITCH_ANGLE + radians(PITCH_SENSITIVITY) < Math.PI/2 && (e.key === "w" || e.key === "W")) {
             PITCH_ANGLE = PITCH_ANGLE + (PITCH_CONTROL ? radians(PITCH_SENSITIVITY) : 0);
-            console.log(PITCH_ANGLE*180/Math.PI)
+            
         }
         else if (PITCH_ANGLE - radians(PITCH_SENSITIVITY) > -Math.PI/2 && (e.key === "s" || e.key === "S")) {
             
             PITCH_ANGLE = PITCH_ANGLE - (PITCH_CONTROL ? radians(PITCH_SENSITIVITY) : 0);
-            console.log(PITCH_ANGLE*180/Math.PI)
+            
         }
         else if (ROLL_ANGLE + radians(ROLL_SENSITIVITY) <= Math.PI && (e.key === "q" || e.key === "Q")) {
             ROLL_ANGLE = ROLL_ANGLE + (ROLL_CONTROL ? radians(ROLL_SENSITIVITY) : 0);
-            console.log(ROLL_ANGLE*180/Math.PI)
+            // console.log(ROLL_ANGLE*180/Math.PI)
         }
         else if (ROLL_ANGLE- radians(ROLL_SENSITIVITY) >=0 && (e.key === "e" || e.key === "E")) {
             ROLL_ANGLE = ROLL_ANGLE - (ROLL_CONTROL ?radians(ROLL_SENSITIVITY) : 0);
-            console.log(ROLL_ANGLE*180/Math.PI)
+            // console.log(ROLL_ANGLE*180/Math.PI)
         }
     
         else if (e.key === "1" && LEFT + SHIFT_SENSITIVITY<= 0){ 
@@ -132,7 +167,7 @@ window.onload = () => {
         
         else if (e.key === "ArrowDown" && FLYING_SPEED- SPEED_SENSITIVITY >= 0){
             FLYING_SPEED -= SPEED_SENSITIVITY;
-            console.log(FLYING_SPEED)
+            // console.log(FLYING_SPEED)
         }
         else if (e.key === "ArrowUp" && FLYING_SPEED + SPEED_SENSITIVITY <= MAX_SPEED){
             FLYING_SPEED += SPEED_SENSITIVITY;
@@ -235,7 +270,7 @@ var loop = function() {
                     Math.cos(PITCH_ANGLE)*Math.sin(ROLL_ANGLE),
                     Math.sin(PITCH_ANGLE)*Math.sin(ROLL_ANGLE)));
     
-    projMatrix = ortho(LEFT, RIGHT, BOTTOM , TOP , NEAR , FAR);
+    projMatrix = frustum(LEFT, RIGHT, BOTTOM , TOP , NEAR , FAR);
 
     gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));              
     gl.uniformMatrix4fv(matViewUniformLocation, false, flatten(viewMatrix)); // Send new data to GPU
