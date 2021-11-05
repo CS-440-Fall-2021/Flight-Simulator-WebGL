@@ -22,15 +22,15 @@ let FAR = 1000.0;
 let SHIFT_SENSITIVITY = 1;
 
 
-let YAW_SENSITIVITY = 1;
+let YAW_SENSITIVITY = 0.1
 let YAW_CONTROL = true;
 let YAW_ANGLE = 0;
 
-let PITCH_SENSITIVITY = 1;
+let PITCH_SENSITIVITY = 0.1;
 let PITCH_CONTROL = true;
 let PITCH_ANGLE = 0;
 
-let ROLL_SENSITIVITY = 1;
+let ROLL_SENSITIVITY = 0.1;
 let ROLL_CONTROL = true;
 let ROLL_ANGLE = 90 * Math.PI/180;
 
@@ -38,6 +38,9 @@ let FLYING_SPEED = 2.0;
 let MAX_SPEED = 10;
 let SPEED_SENSITIVITY = 1;
 
+let eye = vec3(0,3,15);
+let at = vec3(0,0,0);
+let up = vec3 (0,1,0);
 // Init WebGL
 gl.viewport(0, 0, canvas.width, canvas.height);
 gl.clearColor(0.75, 0.85, 0.8, 1.0);
@@ -66,6 +69,7 @@ window.onload = () => {
         if (YAW_ANGLE - radians(YAW_SENSITIVITY)> -Math.PI/2  &&  (e.key === "a" || e.key === "A")) {
             YAW_ANGLE = YAW_ANGLE - (YAW_CONTROL ? radians(YAW_SENSITIVITY) : 0);
             console.log(YAW_ANGLE*180/Math.PI);
+
         }
         else if (YAW_ANGLE + radians(YAW_SENSITIVITY) < Math.PI/2  && (e.key === "d" || e.key === "D")) {
             YAW_ANGLE = YAW_ANGLE + (YAW_CONTROL ? radians(YAW_SENSITIVITY) : 0);
@@ -210,21 +214,21 @@ var identityMatrix = mat4();
 var loop = function() {
     distance = i / 60;
 
-    worldMatrix = rotate(YAW_ANGLE*180/Math.PI, vec3(0, 1, 0));
+    // worldMatrix = rotate(YAW_ANGLE*180/Math.PI, vec3(0, 1, 0));
 
     viewMatrix = 
     lookAt(
-        add(vec3(0, 3, 15), mult(
+        add(eye, mult(
             -distance,vec3(
-                0,
+                Math.sin(YAW_ANGLE),
                 Math.sin(PITCH_ANGLE), 
-                Math.cos(PITCH_ANGLE)
+                Math.cos(PITCH_ANGLE)*Math.cos(YAW_ANGLE)
             ))), 
-        add(vec3(0, 0, 0), mult(
+        add(at, mult(
                 -distance,vec3(
-                    0,
+                    Math.sin(YAW_ANGLE),
                     Math.sin(PITCH_ANGLE), 
-                    Math.cos(PITCH_ANGLE)
+                    Math.cos(PITCH_ANGLE)*Math.cos(YAW_ANGLE)
                 ))),
                 vec3(
                     Math.cos(ROLL_ANGLE),
