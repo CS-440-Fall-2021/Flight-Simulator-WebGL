@@ -10,19 +10,19 @@ let ENABLE_ROUNDING = false;
 let TERRAIN_DETAIL_LEVEL = 200;
 let MESH_ELEVATION = 0;
 let TERRAIN_BOUNDS = 25;
-let PERLIN_SCALING_FACTOR = 2.0;
+let PERLIN_SCALING_FACTOR = 2.5;
+let NOISE_SPACER = 3;
 
 let RIGHT = 8;
 let LEFT = -7;
-let BOTTOM = -3;
+let BOTTOM = -4;
 let TOP = 10;
 let NEAR = 15;
-let FAR = -20.0;
+let FAR = -30.0;
 
 let SHIFT_SENSITIVITY = 1;
 
-
-let YAW_SENSITIVITY = 0.1
+let YAW_SENSITIVITY = 0.05
 let YAW_CONTROL = true;
 let YAW_ANGLE = 0;
 
@@ -32,7 +32,7 @@ let PITCH_ANGLE = 0;
 
 let ROLL_SENSITIVITY = 0.1;
 let ROLL_CONTROL = true;
-let ROLL_ANGLE = 90 * Math.PI/180;
+let ROLL_ANGLE = 90;
 
 let FLYING_SPEED = 2.0;
 let MAX_SPEED = 10;
@@ -41,6 +41,8 @@ let SPEED_SENSITIVITY = 1;
 let eye = vec3(0,10,25);
 let at = vec3(0,0,-1);
 let up = vec3 (0,1,0);
+
+
 // Init WebGL
 gl.viewport(0, 0, canvas.width, canvas.height);
 gl.clearColor(0.75, 0.85, 0.8, 1.0);
@@ -101,31 +103,81 @@ window.onload = () => {
     document.onkeydown = (e) => {
         
 
-        if (YAW_ANGLE - radians(YAW_SENSITIVITY)> -Math.PI/2  &&  (e.key === "a" || e.key === "A")) {
-            YAW_ANGLE = YAW_ANGLE - (YAW_CONTROL ? radians(YAW_SENSITIVITY) : 0);
+        if (YAW_ANGLE - (YAW_SENSITIVITY)> -90  &&  (e.key === "a" || e.key === "A")) {
+            YAW_ANGLE = YAW_ANGLE - (YAW_CONTROL ? (YAW_SENSITIVITY) : 0);
             
+            rotation = rotateY(YAW_SENSITIVITY);
+            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+                rotation[1][0],rotation[1][1],rotation[1][2],
+                rotation[2][0],rotation[2][1],rotation[2][2],)
+            
+            eye = mult(rotation,eye)
+            at = mult(rotation,at)
+            up = mult(rotation,up)
+        }
+        else if (YAW_ANGLE + (YAW_SENSITIVITY) < 90 && (e.key === "d" || e.key === "D")) {
+            YAW_ANGLE = YAW_ANGLE + (YAW_CONTROL ? (YAW_SENSITIVITY) : 0);
+            
+            rotation = rotateY(-YAW_SENSITIVITY);
+            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+                rotation[1][0],rotation[1][1],rotation[1][2],
+                rotation[2][0],rotation[2][1],rotation[2][2],)
+            
+            eye = mult(rotation,eye)
+            at = mult(rotation,at)
+            up = mult(rotation,up)
+        }
+        else if (PITCH_ANGLE + (PITCH_SENSITIVITY) < 90 &&
+            (e.key === "w" || e.key === "W")) 
+            {
+            PITCH_ANGLE = PITCH_ANGLE + (PITCH_CONTROL ? (PITCH_SENSITIVITY) : 0);
 
-        }
-        else if (YAW_ANGLE + radians(YAW_SENSITIVITY) < Math.PI/2  && (e.key === "d" || e.key === "D")) {
-            YAW_ANGLE = YAW_ANGLE + (YAW_CONTROL ? radians(YAW_SENSITIVITY) : 0);
+            rotation = rotateX(-PITCH_SENSITIVITY);
+            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+                rotation[1][0],rotation[1][1],rotation[1][2],
+                rotation[2][0],rotation[2][1],rotation[2][2],)
             
+            eye = mult(rotation,eye)
+            at = mult(rotation,at)
+            up = mult(rotation,up)  
+ 
         }
-        else if (PITCH_ANGLE + radians(PITCH_SENSITIVITY) < Math.PI/2 && (e.key === "w" || e.key === "W")) {
-            PITCH_ANGLE = PITCH_ANGLE + (PITCH_CONTROL ? radians(PITCH_SENSITIVITY) : 0);
+        else if (PITCH_ANGLE - (PITCH_SENSITIVITY) > -90 && (e.key === "s" || e.key === "S")) {
             
-        }
-        else if (PITCH_ANGLE - radians(PITCH_SENSITIVITY) > -Math.PI/2 && (e.key === "s" || e.key === "S")) {
+            PITCH_ANGLE = PITCH_ANGLE - (PITCH_CONTROL ? (PITCH_SENSITIVITY) : 0);
             
-            PITCH_ANGLE = PITCH_ANGLE - (PITCH_CONTROL ? radians(PITCH_SENSITIVITY) : 0);
+            rotation = rotateX(PITCH_SENSITIVITY);
+            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+                rotation[1][0],rotation[1][1],rotation[1][2],
+                rotation[2][0],rotation[2][1],rotation[2][2],)
             
+            eye = mult(rotation,eye)
+            at = mult(rotation,at) 
+            up = mult(rotation,up)  
         }
-        else if (ROLL_ANGLE + radians(ROLL_SENSITIVITY) <= Math.PI && (e.key === "q" || e.key === "Q")) {
-            ROLL_ANGLE = ROLL_ANGLE + (ROLL_CONTROL ? radians(ROLL_SENSITIVITY) : 0);
-            // console.log(ROLL_ANGLE*180/Math.PI)
+        else if (ROLL_ANGLE + (ROLL_SENSITIVITY) <= 180 && (e.key === "q" || e.key === "Q")) {
+            ROLL_ANGLE = ROLL_ANGLE + (ROLL_CONTROL ? (ROLL_SENSITIVITY) : 0);
+            
+            rotation = rotateZ(-ROLL_SENSITIVITY);
+            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+                rotation[1][0],rotation[1][1],rotation[1][2],
+                rotation[2][0],rotation[2][1],rotation[2][2],)
+            
+            eye = mult(rotation,eye)
+            at = mult(rotation,at)
+            up = mult(rotation,up)
         }
-        else if (ROLL_ANGLE- radians(ROLL_SENSITIVITY) >=0 && (e.key === "e" || e.key === "E")) {
-            ROLL_ANGLE = ROLL_ANGLE - (ROLL_CONTROL ?radians(ROLL_SENSITIVITY) : 0);
-            // console.log(ROLL_ANGLE*180/Math.PI)
+        else if (ROLL_ANGLE- (ROLL_SENSITIVITY) >=0 && (e.key === "e" || e.key === "E")) {
+            ROLL_ANGLE = ROLL_ANGLE - (ROLL_CONTROL ?(ROLL_SENSITIVITY) : 0);
+            
+            rotation = rotateZ(ROLL_SENSITIVITY);
+            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+                rotation[1][0],rotation[1][1],rotation[1][2],
+                rotation[2][0],rotation[2][1],rotation[2][2],)
+            
+            eye = mult(rotation,eye)
+            at = mult(rotation,at)
+            up = mult(rotation,up)
         }
     
         else if (e.key === "1" && LEFT + SHIFT_SENSITIVITY<= 0){ 
@@ -149,7 +201,7 @@ window.onload = () => {
         else if (e.key === "4" && BOTTOM + SHIFT_SENSITIVITY<= 4){ 
             BOTTOM += SHIFT_SENSITIVITY;
         }
-        else if(e.key === "$" && BOTTOM - SHIFT_SENSITIVITY>= 0){
+        else if(e.key === "$" && BOTTOM - SHIFT_SENSITIVITY>= -100){
             BOTTOM -= SHIFT_SENSITIVITY;
         }
         else if (e.key === "5" && NEAR + SHIFT_SENSITIVITY<= 100){ 
@@ -197,19 +249,24 @@ function get_patch(x_min, x_max, z_min, z_max){
     for (let j= z_min; j < z_max; j = j + z_interval){
         for (let i = x_min; i < x_max; i = i + x_interval){
             
-            a_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get(i, j)) : 0; 
+            a_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get(i/NOISE_SPACER, j/NOISE_SPACER)) : 0; 
+            a_y = a_y < -1.5 ? -1.5 : a_y > 2.2 ? 2.2 : a_y
             A = vec3(i, a_y, j);
             A_m = vec3(i, a_y + MESH_ELEVATION, j);
             
-            b_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get(i,j + z_interval)) : 0; 
+            b_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get(i/NOISE_SPACER,(j + z_interval)/NOISE_SPACER)) : 0; 
+            b_y = b_y < -1.5 ? -1.5 : b_y > 2.2 ? 2.2 : b_y
+
             B = vec3(i, b_y, j + z_interval);
             B_m = vec3(i, b_y + MESH_ELEVATION, j + z_interval);
             
-            c_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get(i + x_interval, j + z_interval)) : 0;
+            c_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get((i + x_interval)/NOISE_SPACER, (j + z_interval)/NOISE_SPACER)) : 0;
+            c_y = c_y < -1.5 ? -1.5 : c_y  > 2.2 ? 2.2 : c_y
             C = vec3(i + x_interval, c_y, j + z_interval);
             C_m = vec3(i + x_interval, c_y + MESH_ELEVATION, j + z_interval);
             
-            d_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get(i + x_interval, j)) : 0;  
+            d_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get((i + x_interval)/NOISE_SPACER, j/NOISE_SPACER)) : 0;  
+            d_y = d_y < -1.5 ? -1.5 : d_y  > 2.2 ? 2.2 : d_y
             D = vec3(i + x_interval, d_y, j);
             D_m = vec3(i + x_interval, d_y + MESH_ELEVATION, j);
             
@@ -234,8 +291,8 @@ var matProjUniformLocation = gl.getUniformLocation(program, "mProj"); // deals w
 var colorValueUniformLocation = gl.getUniformLocation(program, "colorValue");
 
 var worldMatrix = mat4();
-var viewMatrix = lookAt(vec3(0, 3,15 ), vec3(0, 0, 0), vec3(0, 1, 0));
-var projMatrix = ortho(-10.0, 10.0, 0.0, 10.0, NEAR, FAR);
+var viewMatrix = lookAt(eye,at,up);
+var projMatrix = frustum(LEFT, RIGHT, BOTTOM, TOP, NEAR, FAR);
 var colorValue = vec4(1.0, 1.0, 1.0, 1.0);
 
 // Send matrix data to GPU
@@ -246,30 +303,21 @@ gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue
 
 var identityMatrix = mat4();
 
+
+
+
+
 var loop = function() {
     distance = i / 60;
 
-    // worldMatrix = rotate(YAW_ANGLE*180/Math.PI, vec3(0, 1, 0));
+    
 
     viewMatrix = 
     lookAt(
-        add(eye, mult(
-            -distance,vec3(
-                Math.sin(YAW_ANGLE),
-                Math.sin(PITCH_ANGLE), 
-                Math.cos(PITCH_ANGLE)*Math.cos(YAW_ANGLE)
-            ))), 
-        add(at, mult(
-                -distance,vec3(
-                    Math.sin(YAW_ANGLE),
-                    Math.sin(PITCH_ANGLE), 
-                    Math.cos(PITCH_ANGLE)*Math.cos(YAW_ANGLE)
-                ))),
-                vec3(
-                    Math.cos(ROLL_ANGLE),
-                    Math.cos(PITCH_ANGLE)*Math.sin(ROLL_ANGLE),
-                    Math.sin(PITCH_ANGLE)*Math.sin(ROLL_ANGLE)));
-    
+        add(eye, mult(distance, normalize(at)))
+    , 
+        add(at, mult(distance, normalize(at))),
+            up);
     projMatrix = frustum(LEFT, RIGHT, BOTTOM , TOP , NEAR , FAR);
 
     gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));              
@@ -305,6 +353,7 @@ var loop = function() {
 
 
 id = requestAnimationFrame(loop);
+
 
 function sendDataToGPU() {
     // Send vertex data to GPU
