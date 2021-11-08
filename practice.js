@@ -34,7 +34,7 @@ let ROLL_SENSITIVITY = 0.1;
 let ROLL_CONTROL = true;
 let ROLL_ANGLE = 90;
 
-let FLYING_SPEED = 2.0;
+let FLYING_SPEED = 4.0;
 let MAX_SPEED = 10;
 let SPEED_SENSITIVITY = 1;
 
@@ -245,8 +245,10 @@ function get_patch(x_min, x_max, z_min, z_max){
     var z_interval = (z_max - z_min)/TERRAIN_DETAIL_LEVEL;
     
     var temp_points = [];
+    var _points = [];
+    var _matrix = [];
 
-    for (let j= z_min; j < z_max; j = j + z_interval){
+    for (let j= z_max; j > z_min; j = j - z_interval){
         for (let i = x_min; i < x_max; i = i + x_interval){
             
             a_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get(i/NOISE_SPACER, j/NOISE_SPACER)) : 0; 
@@ -271,17 +273,21 @@ function get_patch(x_min, x_max, z_min, z_max){
             D_m = vec3(i + x_interval, d_y + MESH_ELEVATION, j);
             
             temp_points.push(B_m,A_m,D_m,C_m,B_m,D_m);
-            points.push(A,B,D,B,C,D);
+            _points.push(A,B,D,B,C,D);
             
         }
-        matrix.push(temp_points);
+        _matrix.push(temp_points);
         // console.log(temp_points);
         temp_points = [];
-    }  
+    }
+    return [_points, _matrix]
 }
 
-get_patch(-TERRAIN_BOUNDS, TERRAIN_BOUNDS, -TERRAIN_BOUNDS, TERRAIN_BOUNDS);
-temp = points;
+var result = get_patch(-TERRAIN_BOUNDS, TERRAIN_BOUNDS, -TERRAIN_BOUNDS, TERRAIN_BOUNDS);
+points = [...result[0]];
+matrix = [...result[1]];
+
+temp = [...points];
 
 
 
@@ -304,20 +310,38 @@ gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue
 var identityMatrix = mat4();
 
 
-
+var z_threshold = 0;
+var terrain_number = 0;
+var z_min = -TERRAIN_BOUNDS;
+var z_max = TERRAIN_BOUNDS;
 
 
 var loop = function() {
+    
     distance = i / 60;
 
-    
+    updatedEye = add(eye, mult(distance, normalize(at)));
+    updatedAt = add(at, mult(distance, normalize(at)));
 
-    viewMatrix = 
-    lookAt(
-        add(eye, mult(distance, normalize(at)))
-    , 
-        add(at, mult(distance, normalize(at))),
-            up);
+    // console.log(updatedEye[2]);
+
+    if (updatedEye[2] < z_threshold) {
+        
+        terrain_number++;
+
+        z_min = z_min - (2 * TERRAIN_BOUNDS);
+        z_max = z_max - (2 * TERRAIN_BOUNDS);
+
+        var results = get_patch(-TERRAIN_BOUNDS, TERRAIN_BOUNDS, z_min, z_max);
+        points.concat([...results[0]]);
+        temp = [...points];
+        matrix.concat([...results[1]]);
+        console.log("Pushing new terrain...");
+
+        z_threshold = z_threshold - (2 * TERRAIN_BOUNDS)
+    }
+    
+    viewMatrix = lookAt(updatedEye, updatedAt, up);
     projMatrix = frustum(LEFT, RIGHT, BOTTOM , TOP , NEAR , FAR);
 
     gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));              
