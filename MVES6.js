@@ -683,10 +683,10 @@ function transpose( m )
           for(let j=0; j<4; j++) out[i][j] = m[j][i];
         return out;
     }
-
+    let result =0;
     switch(m.type) {
       case 'mat2':
-        let result = mat2(m[0][0], m[1][0],
+        result = mat2(m[0][0], m[1][0],
                           m[0][1], m[1][1]
                         );
         return result;
@@ -1169,7 +1169,8 @@ function normalMatrix(m, flag)
 {
     if(m.type!='mat4') throw "normalMatrix: input not a mat4";
     let a = inverse(transpose(m));
-    if(arguments.length == 1 &&flag == false) return a;
+    
+    if(arguments.length == 2 && flag == false) return a;
 
     let b = mat3();
     for(let i=0;i<3;i++) for(let j=0; j<3; j++) b[i][j] = a[i][j];

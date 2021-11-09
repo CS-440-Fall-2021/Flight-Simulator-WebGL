@@ -7,11 +7,11 @@ let id = null;
 
 let ENABLE_PERLIN = true;
 let ENABLE_ROUNDING = false;
-let TERRAIN_DETAIL_LEVEL = 200;
+let TERRAIN_DETAIL_LEVEL = 300;
 let MESH_ELEVATION = 0;
 let TERRAIN_BOUNDS = 25;
 let PERLIN_SCALING_FACTOR = 2.5;
-let NOISE_SPACER = 1.2;
+let NOISE_SPACER = 3;
 
 let RIGHT = 8;
 let LEFT = -7;
@@ -45,7 +45,7 @@ let at = vec3(0,0,-1);
 let up = vec3 (0,1,0);
 
 let view = "points";
-
+let shade = "Phong"
 // Init WebGL
 gl.viewport(0, 0, canvas.width, canvas.height);
 gl.clearColor(0.75, 0.85, 0.8, 1.0);
@@ -60,8 +60,12 @@ gl.polygonOffset(1,1);
 
 //enable or disable this setting as needed
 gl.enable(gl.POLYGON_OFFSET_FILL);
-
-program = initShaders(gl, "vertex-shader", "fragment-shader");
+if (shade == "Phong"){
+    program = initShaders(gl, "vertex-shader-phong","fragment-shader-phong")
+}
+else{
+    program = initShaders(gl, "vertex-shader", "fragment-shader");
+}
 gl.useProgram(program);
 
 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -279,18 +283,19 @@ tempnor = [...normals];
 var matWorldUniformLocation = gl.getUniformLocation(program, "mWorld"); // deals with rotation
 var matViewUniformLocation = gl.getUniformLocation(program, "mView"); // deals with camera
 var matProjUniformLocation = gl.getUniformLocation(program, "mProj"); // deals with 3D to 2D projection
-var colorValueUniformLocation = gl.getUniformLocation(program, "colorValue");
+var matNormalUniformLocation = gl.getUniformLocation(program,"mNorm");
 
 var worldMatrix = mat4();
 var viewMatrix = lookAt(eye,at,up);
 var projMatrix = frustum(LEFT, RIGHT, BOTTOM, TOP, NEAR, FAR);
-var colorValue = vec4(1.0, 1.0, 1.0, 1.0);
-
+var normMatrix = normalMatrix(viewMatrix,false);
+console.log(normMatrix);
 // Send matrix data to GPU
 gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, flatten(worldMatrix));
 gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, flatten(viewMatrix));
 gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));
-gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2], colorValue[3]);
+gl.uniformMatrix4fv(matNormalUniformLocation,gl.FALSE, flatten(normMatrix));
+
 
 var identityMatrix = mat4();
 
@@ -345,35 +350,30 @@ var loop = function() {
     
     viewMatrix = lookAt(eye, at, up);
     projMatrix = frustum(LEFT, RIGHT, BOTTOM , TOP , NEAR , FAR);
+    normMatrix = normalMatrix(viewMatrix,false);
 
     gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));              
     gl.uniformMatrix4fv(matViewUniformLocation, false, flatten(viewMatrix)); // Send new data to GPU
     gl.uniformMatrix4fv(matWorldUniformLocation, false, flatten(worldMatrix));
-
+    gl.uniformMatrix4fv(matNormalUniformLocation,false,flatten(normMatrix));
     i+= 1;
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // Drawing Triangles
-    colorValue = vec4(0.0, 0.0, 0.0, 1.0);
-    gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2], colorValue[3]);
-
+   
     points = temp;
+    normals = tempnor;
     sendDataToGPU();
 
     if (view === "faces"){
         gl.drawArrays(gl.TRIANGLES, 0, points.length);
-        
-        
-
     }
     
 
     else if (view === "wireframe"){
-    // Drawing Mesh
-        
-        
         for (let i = 0; i < matrix.length; i++) {
+            normals = matrix_normals[i];
             points = matrix[i];
             sendDataToGPU();
             gl.drawArrays(gl.LINE_STRIP, 0, points.length);
@@ -381,9 +381,8 @@ var loop = function() {
     }
 
     else if (view === "points"){
-        
-        // temp = points;
         for (let i = 0; i < matrix.length; i++) {
+            normals = matrix_normals[i];
             points = matrix[i];
             sendDataToGPU();
             gl.drawArrays(gl.POINTS, 0, points.length);
@@ -407,13 +406,12 @@ function sendDataToGPU() {
     gl.enableVertexAttribArray(vPosition);
 
 
-    // Send color data to GPU
-    // gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    // gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
 
-    // var vColor = gl.getAttribLocation(program, "vColor");
-    // gl.vertexAttribPointer(vColor, 3, gl.FLOAT, false, 0, 0);
-    // gl.enableVertexAttribArray(vColor);
+    var vNormal = gl.getAttribLocation(program, "vNormal");
+    gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vNormal);
 }
 
 function round(n) {
