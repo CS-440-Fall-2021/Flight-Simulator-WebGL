@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        #version 300 es
+
+        in vec3 vPosition;
+        // in vec3 vColor;
+
+        uniform mat4 mWorld;
+        uniform mat4 mView;
+        uniform mat4 mProj;
+
+        //uniform vec4 colorValue;
+
+        out vec4 fragPos;
+
+        void main() {
+            gl_PointSize = 1.0;
+            gl_Position = mProj * mView * mWorld * vec4(vPosition, 1.0);
+            
+            fragPos = vec4(vPosition,1.0);
+        }
+    </script>
+    
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        #version 300 es
+
+        precision highp float;
+
+        in vec4 fragPos;
+        out vec4 vertexColor;
+
+        void main() {
+            
+            if (fragPos[1] == 0.0){
+                vertexColor = vec4(0,0,1,1);
+            }
+            else {
+                if (fragPos[1]> 0.0 && fragPos[1]< 0.4){
+                
+                    float alpha = float(fragPos[1])/0.4;
+                    vertexColor = alpha * vec4(214/255,91/255, 43/255, 1.0) + (1.0 - alpha)* vec4(0.0, 1.0, 0.0, 1.0); 
+                }
+                else{
+                    float alpha = fragPos[1]-0.4/1.0;
+                    vertexColor = alpha * vec4(1.0, 1.0, 1.0, 1.0) + (1.0 - alpha)* vec4(214/255, 91/255, 43/255, 1.0); 
+                    
+                }
+            }
+        }
+    </script>
+
+    <script id = "vertex-shader-phong"  type="x-shader/x-vertex">
+        #version 300 es
+
+        in vec3 vPosition;
+        in vec3 vNormal;
+        uniform mat4 mWorld;
+        uniform mat4 mView;
+        uniform mat4 mProj;
+        uniform mat4 mNorm;
+
+        out vec3 normalInterp;
+        out vec3 vertPos;
+
+        out vec4 fragPos;
+
+        void main(){
+            gl_PointSize = 1.0;
+            vec4 vertPos4 = mView * vec4(vPosition, 1.0);
+            vertPos = vec3(vertPos4) / vertPos4.w;
+            normalInterp = vec3(mNorm * vec4(vNormal, 0.0));
+            gl_Position = mProj * vertPos4;
+            fragPos = vec4(vPosition,1.0);
+    }
+    </script>
+    <script id= "fragment-shader-phong" type="x-shader/x-fragment">
+        #version 300 es
+
+        precision mediump float;
+        in vec4 fragPos;
+        in vec3 normalInterp;  // Surface normal
+        in vec3 vertPos;       // Vertex position
+        
+        
+        //uniform vec3 specularColor;
+        uniform vec3 lightPos; // Light position
+        out vec4 fragcolor;
+
+        void main() {
+        vec3 lightPos = vec3(0,10,0); 
+        vec3 N = normalize(normalInterp);
+          vec3 L = normalize(lightPos - vertPos);
+        vec3 diffuseColor= vec3(1,1,1);
+        if (fragPos[1] == 0.0){
+            diffuseColor = vec3(0,0,1);
+        }
+        else {
+            if (fragPos[1]> 0.0 && fragPos[1]< 0.4){
+            
+                float alpha = float(fragPos[1])/0.4;
+                diffuseColor = alpha * vec3(165/255,42/255, 42/255) + (1.0 - alpha)* vec3(0.0, 1.0, 0.0); 
+                
+            }
+            else{
+                float alpha = (fragPos[1]-0.4)/1.4;
+                diffuseColor = alpha * vec3(1.0, 1.0, 1.0) + (1.0 - alpha)* vec3(165/255, 42/255, 42/255); 
+                
+                
+            }
+        }
+          // Lambert's cosine law
+          float lambertian = max(dot(N, L), 0.0);
+          float specular = 0.0;
+          if(lambertian > 0.0) {
+            vec3 R = reflect(-L, N);      // Reflected light vector
+            vec3 V = normalize(-vertPos); // Vector to viewer
+            // Compute the specular term
+            float specAngle = max(dot(R, V), 0.0);
+            specular = pow(specAngle, 80.0);
+          }
+          fragcolor = vec4(1.0 * vec3(0.002,0.002,0) +
+                              1.0 * lambertian * diffuseColor +
+                              1.0 * specular * vec3(1,1,1), 1.0);
+        
+
+        }
+        
+    
+    </script>
+
+    <script id = "vertex-shader-smooth"  type="x-shader/x-vertex">
+        #version 300 es
+        
+        in vec3 vPosition;
+        in vec3 vNormal;
+        uniform mat4 mProj, mView, mNorm;
+        vec3 normalInterp;
+        vec3 vertPos;
+        //uniform int mode;   // Rendering mode
+        //uniform float Ka;   // Ambient reflection coefficient
+        //uniform float Kd;   // Diffuse reflection coefficient
+        //uniform float Ks;   // Specular reflection coefficient
+        //uniform float shininessVal; // Shininess
+        // Material color
+        //uniform vec3 ambientColor;
+        //uniform vec3 diffuseColor;
+        uniform vec3 specularColor;
+        //uniform vec3 lightPos; // Light position
+        out vec4 color; //color
+
+        void main(){
+        vec4 vertPos4 = mView * vec4(vPosition, 1.0);
+        vertPos = vec3(vertPos4) / vertPos4.w;
+        normalInterp = vec3(mNorm * vec4(vNormal, 0.0));
+        gl_Position = mProj * vertPos4;
+        gl_PointSize= 1.0;
+        vec3 N = normalize(normalInterp);
+        
+        vec3 L = normalize(vec3(0,100,0) - vertPos);
+        // Lambert's cosine law
+        float lambertian = max(dot(N, L), 0.0);
+        float specular = 0.0;
+        if(lambertian > 0.0) {
+            vec3 R = reflect(-L, N);      // Reflected light vector
+            vec3 V = normalize(-vertPos); // Vector to viewer
+            // Compute the specular term
+            float specAngle = max(dot(R, V), 0.0);
+            specular = pow(specAngle, 80.0);
+        }
+
+        vec3 diffuseColor = vec3(0.0,0.0,0.0);
+        if (vPosition[1] == 0.0){
+            diffuseColor = vec3(0.0,0.0,1.0);
+        }
+        else {
+            if (vPosition[1]> 0.0 && vPosition[1]< 0.4){
+            
+                float alpha = float(vPosition[1])/0.4;
+                diffuseColor = alpha * vec3(165/255,42/255, 42/255) + (1.0 - alpha)* vec3(0.0, 1.0, 0.0); 
+                
+            }
+            else{
+                float alpha = (vPosition[1]-0.4)/1.4;
+                diffuseColor = alpha * vec3(1.0, 1.0, 1.0) + (1.0 - alpha)* vec3(165/255, 42/255, 42/255); 
+                
+            }
+        }
+        color = vec4(1.0 * vec3(0.002,0.002,0) +
+                    1.0 * lambertian * diffuseColor +
+                    1.0 * specular * vec3(1,1,1), 1.0);
+    }
+        
+
+    </script>
+    <script  id = "fragment-shader-smooth"  type="x-shader/x-vertex">
+        #version 300 es
+
+        precision mediump float;
+
+        in vec4 color;
+        out vec4 fragcolor;
+
+        void main() {
+            fragcolor = color;
+        }
+
+</script>
+
+<script id = "vertex-shader-flat"  type="x-shader/x-vertex">
+    #version 300 es
+    
+    in vec3 vPosition;
+    in vec3 vNormal;
+    uniform mat4 mProj, mView, mNorm;
+    vec3 normalInterp;
+    vec3 vertPos;
+    //uniform int mode;   // Rendering mode
+    //uniform float Ka;   // Ambient reflection coefficient
+    //uniform float Kd;   // Diffuse reflection coefficient
+    //uniform float Ks;   // Specular reflection coefficient
+    //uniform float shininessVal; // Shininess
+    // Material color
+    //uniform vec3 ambientColor;
+    //uniform vec3 diffuseColor;
+    uniform vec3 specularColor;
+    //uniform vec3 lightPos; // Light position
+    flat out vec4 color; //color
+
+    void main(){
+    vec4 vertPos4 = mView * vec4(vPosition, 1.0);
+    vertPos = vec3(vertPos4) / vertPos4.w;
+    normalInterp = vec3(mNorm * vec4(vNormal, 0.0));
+    gl_Position = mProj * vertPos4;
+    gl_PointSize= 1.0;
+    vec3 N = normalize(normalInterp);
+    
+    vec3 L = normalize(vec3(10,0,0) - vertPos);
+    // Lambert's cosine law
+    float lambertian = max(dot(N, L), 0.0);
+    float specular = 0.0;
+    if(lambertian > 0.0) {
+        vec3 R = reflect(-L, N);      // Reflected light vector
+        vec3 V = normalize(-vertPos); // Vector to viewer
+        // Compute the specular term
+        float specAngle = max(dot(R, V), 0.0);
+        specular = pow(specAngle, 80.0);
+    }
+
+    vec3 diffuseColor = vec3(0.0,0.0,0.0);
+    if (vPosition[1] == 0.0){
+        diffuseColor = vec3(0.0,0.0,1.0);
+    }
+    else {
+        if (vPosition[1]> 0.0 && vPosition[1]< 0.4){
+        
+            float alpha = float(vPosition[1])/0.4;
+            diffuseColor = alpha * vec3(234/255,221/255, 202/255) + (1.0 - alpha)* vec3(0.0, 1.0, 0.0); 
+            
+        }
+        else{
+            float alpha = (vPosition[1]-0.4)/1.4;
+            diffuseColor = alpha * vec3(1.0, 1.0, 1.0) + (1.0 - alpha)* vec3(234/255, 221/255, 202/255); 
+            
+        }
+    }
+    color = vec4(1.0 * vec3(0.002,0.002,0) +
+                1.0 * lambertian * diffuseColor +
+                1.0 * specular * vec3(1,1,1), 1.0);
+}
+    
+
+</script>
+<script  id = "fragment-shader-flat"  type="x-shader/x-vertex">
+    #version 300 es
+
+    precision mediump float;
+
+    flat in vec4 color;
+    out vec4 fragcolor;
+
+    void main() {
+        fragcolor = color;
+    }
+
+</script>
+    <script src="./MVES6.js"></script>
+    <script src="./initShadersES6.js"></script>
+    <script src='http://joeiddon.github.io/perlin/perlin.js'></script>
+    <title>Practice</title>
+</head>
+<body>
+    <canvas width="1280" height="720" id="webgl-canvas">
+        Your browser doesn't support HTML5.
+    </canvas>
+    
+    <script src="./simulator.js"></script>
+</body>
+</html>
