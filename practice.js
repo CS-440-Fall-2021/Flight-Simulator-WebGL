@@ -364,18 +364,14 @@ var loop = function() {
     if (view === "faces"){
         gl.drawArrays(gl.TRIANGLES, 0, points.length);
         
-        colorValue = vec4(0.75, 0.75, 0.75, 1.0);
-        gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2], colorValue[3]);
-
+        
 
     }
     
 
     else if (view === "wireframe"){
     // Drawing Mesh
-        colorValue = vec4(0.75, 0.75, 0.75, 1.0);
-        gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2], colorValue[3]);
-
+        
         
         for (let i = 0; i < matrix.length; i++) {
             points = matrix[i];
@@ -385,9 +381,7 @@ var loop = function() {
     }
 
     else if (view === "points"){
-        colorValue = vec4(0, 0, 0, 1.0);
-        gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2], colorValue[3]);
-
+        
         // temp = points;
         for (let i = 0; i < matrix.length; i++) {
             points = matrix[i];
