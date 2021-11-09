@@ -342,7 +342,9 @@ var loop = function() {
         at = mult(rotation,at)
         up = mult(rotation,up)  
         
-        ROLL, YAW, PITCH = 0,0,0;
+        ROLL = 0;
+        YAW = 0;
+        PITCH = 0;
         rotation = identityMatrix;
         rot = false;
         }
@@ -360,10 +362,20 @@ var loop = function() {
         z_min = z_min - (2 * TERRAIN_BOUNDS);
         z_max = z_max - (2 * TERRAIN_BOUNDS);
 
+        console.log(`Generating new terrain with (${-TERRAIN_BOUNDS}, ${TERRAIN_BOUNDS}, ${z_min}, ${z_max}).`);
         var results = get_patch(-TERRAIN_BOUNDS, TERRAIN_BOUNDS, z_min, z_max);
-        points.concat([...results[0]]);
+        console.log(`Length of new points: ${results[0].length}.`);
+        console.log(`Length of new matrix: ${results[1].length}.`);
+        
+        points = [...points, ...results[0]];
         temp = [...points];
-        matrix.concat([...results[1]]);
+        
+        matrix = [...matrix, ...results[1]];
+        
+        normals = [...normals, ...results[2]];
+        tempnor = [...normals];
+
+        matrix_normals = [...matrix_normals, ...results[3]];
         console.log("Pushing new terrain...");
 
         z_threshold = z_threshold - (2 * TERRAIN_BOUNDS)
@@ -427,7 +439,7 @@ function initGPUPipeline() {
 function sendDataToGPU() {
     // Send vertex data to GPU
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STREAM_DRAW);
 
     gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
