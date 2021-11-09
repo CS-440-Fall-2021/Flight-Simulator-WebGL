@@ -42,7 +42,8 @@ let eye = vec3(0,10,25);
 let at = vec3(0,0,-1);
 let up = vec3 (0,1,0);
 
-let view = "points"
+let view = "points";
+
 // Init WebGL
 gl.viewport(0, 0, canvas.width, canvas.height);
 gl.clearColor(0.75, 0.85, 0.8, 1.0);
@@ -231,8 +232,8 @@ window.onload = () => {
             view = view === "points" ? "wireframe":
                     view === "wireframe" ? "faces" :
                     view === "faces" ? "points": "error"
-            console.log(view);
-                }
+            
+        }
     }
 }
 
@@ -250,34 +251,32 @@ function get_patch(x_min, x_max, z_min, z_max){
     var z_interval = (z_max - z_min)/TERRAIN_DETAIL_LEVEL;
     
     var temp_points = [];
+    var _points = [];
+    var _matrix = [];
 
-    for (let j= z_min; j < z_max; j = j + z_interval){
+    for (let j= z_max; j > z_min; j = j - z_interval){
         for (let i = x_min; i < x_max; i = i + x_interval){
             
             a_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get(i/NOISE_SPACER, j/NOISE_SPACER)) : 0; 
-            a_y = a_y <= 0.0 ? 0.0  : a_y
-            
+            a_y = a_y < 0.0 ? 0.0 : a_y
             A = vec3(i, a_y, j);
             A_m = vec3(i, a_y + MESH_ELEVATION, j);
             
             b_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get(i/NOISE_SPACER,(j + z_interval)/NOISE_SPACER)) : 0; 
-            b_y = b_y <= 0.0? 0.0 :  b_y
+            b_y = b_y < 0.0 ? 0.0 : b_y
 
             B = vec3(i, b_y, j + z_interval);
             B_m = vec3(i, b_y + MESH_ELEVATION, j + z_interval);
             
             c_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get((i + x_interval)/NOISE_SPACER, (j + z_interval)/NOISE_SPACER)) : 0;
-            c_y = c_y <= 0.0 ? 0.0 :  c_y
-            
+            c_y = c_y < 0.0 ? 0.0 : c_y
             C = vec3(i + x_interval, c_y, j + z_interval);
             C_m = vec3(i + x_interval, c_y + MESH_ELEVATION, j + z_interval);
             
             d_y = ENABLE_PERLIN ? (PERLIN_SCALING_FACTOR * perlin.get((i + x_interval)/NOISE_SPACER, j/NOISE_SPACER)) : 0;  
-            d_y = d_y <= 0.0 ? 0.0 : d_y
-            
+            d_y = d_y < 0.0 ? 0.0  : d_y
             D = vec3(i + x_interval, d_y, j);
             D_m = vec3(i + x_interval, d_y + MESH_ELEVATION, j);
-            
             
             A_norm = cross(subtract(B, A), subtract(D, A))
             B_norm = cross(subtract(A, B), subtract(C, B))
@@ -285,17 +284,21 @@ function get_patch(x_min, x_max, z_min, z_max){
             D_norm = cross(subtract(A,D),subtract(C,D))
 
             temp_points.push(B_m,A_m,D_m,C_m,B_m,D_m);
-            points.push(B,A,D,B,C,D);
+            _points.push(B,A,D,B,C,D);
             
         }
-        matrix.push(temp_points);
+        _matrix.push(temp_points);
         // console.log(temp_points);
         temp_points = [];
-    }  
+    }
+    return [_points, _matrix]
 }
 
-get_patch(-TERRAIN_BOUNDS, TERRAIN_BOUNDS, -TERRAIN_BOUNDS, TERRAIN_BOUNDS);
-temp = points;
+var result = get_patch(-TERRAIN_BOUNDS, TERRAIN_BOUNDS, -TERRAIN_BOUNDS, TERRAIN_BOUNDS);
+points = [...result[0]];
+matrix = [...result[1]];
+
+temp = [...points];
 
 
 
@@ -318,20 +321,38 @@ gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue
 var identityMatrix = mat4();
 
 
-
+var z_threshold = 0;
+var terrain_number = 0;
+var z_min = -TERRAIN_BOUNDS;
+var z_max = TERRAIN_BOUNDS;
 
 
 var loop = function() {
+    
     distance = i / 60;
 
-    
+    updatedEye = add(eye, mult(distance, normalize(at)));
+    updatedAt = add(at, mult(distance, normalize(at)));
 
-    viewMatrix = 
-    lookAt(
-        add(eye, mult(distance, normalize(at)))
-    , 
-        add(at, mult(distance, normalize(at))),
-            up);
+    // console.log(updatedEye[2]);
+
+    if (updatedEye[2] < z_threshold) {
+        
+        terrain_number++;
+
+        z_min = z_min - (2 * TERRAIN_BOUNDS);
+        z_max = z_max - (2 * TERRAIN_BOUNDS);
+
+        var results = get_patch(-TERRAIN_BOUNDS, TERRAIN_BOUNDS, z_min, z_max);
+        points.concat([...results[0]]);
+        temp = [...points];
+        matrix.concat([...results[1]]);
+        console.log("Pushing new terrain...");
+
+        z_threshold = z_threshold - (2 * TERRAIN_BOUNDS)
+    }
+    
+    viewMatrix = lookAt(updatedEye, updatedAt, up);
     projMatrix = frustum(LEFT, RIGHT, BOTTOM , TOP , NEAR , FAR);
 
     gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));              
@@ -348,7 +369,7 @@ var loop = function() {
 
     points = temp;
     sendDataToGPU();
-    
+
     if (view === "faces"){
         gl.drawArrays(gl.TRIANGLES, 0, points.length);
         
@@ -388,6 +409,7 @@ var loop = function() {
             gl.drawArrays(gl.POINTS, 0, points.length);
         }
     }
+    
     id = requestAnimationFrame(loop);
 }
 
