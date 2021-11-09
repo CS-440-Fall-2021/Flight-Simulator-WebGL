@@ -220,6 +220,84 @@
         }
 
 </script>
+
+<script id = "vertex-shader-flat"  type="x-shader/x-vertex">
+    #version 300 es
+    
+    in vec3 vPosition;
+    in vec3 vNormal;
+    uniform mat4 mProj, mView, mNorm;
+    vec3 normalInterp;
+    vec3 vertPos;
+    //uniform int mode;   // Rendering mode
+    //uniform float Ka;   // Ambient reflection coefficient
+    //uniform float Kd;   // Diffuse reflection coefficient
+    //uniform float Ks;   // Specular reflection coefficient
+    //uniform float shininessVal; // Shininess
+    // Material color
+    //uniform vec3 ambientColor;
+    //uniform vec3 diffuseColor;
+    uniform vec3 specularColor;
+    //uniform vec3 lightPos; // Light position
+    flat out vec4 color; //color
+
+    void main(){
+    vec4 vertPos4 = mView * vec4(vPosition, 1.0);
+    vertPos = vec3(vertPos4) / vertPos4.w;
+    normalInterp = vec3(mNorm * vec4(vNormal, 0.0));
+    gl_Position = mProj * vertPos4;
+    gl_PointSize= 1.0;
+    vec3 N = normalize(normalInterp);
+    
+    vec3 L = normalize(vec3(10,0,0) - vertPos);
+    // Lambert's cosine law
+    float lambertian = max(dot(N, L), 0.0);
+    float specular = 0.0;
+    if(lambertian > 0.0) {
+        vec3 R = reflect(-L, N);      // Reflected light vector
+        vec3 V = normalize(-vertPos); // Vector to viewer
+        // Compute the specular term
+        float specAngle = max(dot(R, V), 0.0);
+        specular = pow(specAngle, 80.0);
+    }
+
+    vec3 diffuseColor = vec3(0.0,0.0,0.0);
+    if (vPosition[1] == 0.0){
+        diffuseColor = vec3(0.0,0.0,1.0);
+    }
+    else {
+        if (vPosition[1]> 0.0 && vPosition[1]< 0.4){
+        
+            float alpha = float(vPosition[1])/0.4;
+            diffuseColor = alpha * vec3(234/255,221/255, 202/255) + (1.0 - alpha)* vec3(0.0, 1.0, 0.0); 
+            
+        }
+        else{
+            float alpha = (vPosition[1]-0.4)/1.4;
+            diffuseColor = alpha * vec3(1.0, 1.0, 1.0) + (1.0 - alpha)* vec3(234/255, 221/255, 202/255); 
+            
+        }
+    }
+    color = vec4(1.0 * vec3(0.002,0.002,0) +
+                1.0 * lambertian * diffuseColor +
+                1.0 * specular * specularColor, 1.0);
+}
+    
+
+</script>
+<script  id = "fragment-shader-flat"  type="x-shader/x-vertex">
+    #version 300 es
+
+    precision mediump float;
+
+    flat in vec4 color;
+    out vec4 fragcolor;
+
+    void main() {
+        fragcolor = color;
+    }
+
+</script>
     <script src="./MVES6.js"></script>
     <script src="./initShadersES6.js"></script>
     <script src='http://joeiddon.github.io/perlin/perlin.js'></script>

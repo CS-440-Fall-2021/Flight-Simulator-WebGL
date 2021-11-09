@@ -45,7 +45,7 @@ let at = vec3(0,0,-1);
 let up = vec3 (0,1,0);
 
 let view = "points";
-let shade = "Smooth"
+let shade = "Flat";
 
 var points = [];
 var colors = [];
@@ -75,6 +75,10 @@ if (shade === "Phong"){
 else if (shade === "Smooth"){
     program = initShaders(gl, "vertex-shader-smooth","fragment-shader-smooth")
 }
+else if (shade === "Flat"){
+    program = initShaders(gl, "vertex-shader-flat","fragment-shader-flat")
+}
+
 else{
     program = initShaders(gl, "vertex-shader", "fragment-shader");
 }
