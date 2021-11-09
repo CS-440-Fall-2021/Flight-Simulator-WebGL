@@ -110,27 +110,13 @@ window.onload = () => {
             YAW_ANGLE = YAW_ANGLE - (YAW_CONTROL ? (YAW_SENSITIVITY) : 0);
             YAW += YAW_SENSITIVITY
             rot = true;
-            // rotation = rotateY(YAW_SENSITIVITY);
-            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-            //     rotation[1][0],rotation[1][1],rotation[1][2],
-            //     rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            // eye = mult(rotation,eye)
-            // at = mult(rotation,at)
-            // up = mult(rotation,up)
+
         }
         else if (YAW_ANGLE + (YAW_SENSITIVITY) < 90 && (e.key === "d" || e.key === "D")) {
             YAW_ANGLE = YAW_ANGLE + (YAW_CONTROL ? (YAW_SENSITIVITY) : 0);
             YAW -= YAW_SENSITIVITY
             rot = true;
-            // rotation = rotateY(-YAW_SENSITIVITY);
-            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-            //     rotation[1][0],rotation[1][1],rotation[1][2],
-            //     rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            // eye = mult(rotation,eye)
-            // at = mult(rotation,at)
-            // up = mult(rotation,up)
+
         }
         else if (PITCH_ANGLE + (PITCH_SENSITIVITY) < 90 &&
             (e.key === "s" || e.key === "S")) 
@@ -138,14 +124,7 @@ window.onload = () => {
             PITCH_ANGLE = PITCH_ANGLE + (PITCH_CONTROL ? (PITCH_SENSITIVITY) : 0);
             PITCH -= PITCH_SENSITIVITY;
             rot = true;
-            // rotation = rotateX(-PITCH_SENSITIVITY);
-            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-            //     rotation[1][0],rotation[1][1],rotation[1][2],
-            //     rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            // eye = mult(rotation,eye)
-            // at = mult(rotation,at)
-            // up = mult(rotation,up)  
+
  
         }
         else if (PITCH_ANGLE - (PITCH_SENSITIVITY) > -90 && (e.key === "w" || e.key === "W")) {
@@ -153,40 +132,19 @@ window.onload = () => {
             PITCH_ANGLE = PITCH_ANGLE - (PITCH_CONTROL ? (PITCH_SENSITIVITY) : 0);
             PITCH += PITCH_SENSITIVITY;
             rot = true;
-            // rotation = rotateX(PITCH_SENSITIVITY);
-            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-            //     rotation[1][0],rotation[1][1],rotation[1][2],
-            //     rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            // eye = mult(rotation,eye)
-            // at = mult(rotation,at) 
-            // up = mult(rotation,up)  
+  
         }
         else if (ROLL_ANGLE + (ROLL_SENSITIVITY) <= 180 && (e.key === "q" || e.key === "Q")) {
             ROLL_ANGLE = ROLL_ANGLE + (ROLL_CONTROL ? (ROLL_SENSITIVITY) : 0);
             ROLL -= ROLL_SENSITIVITY;
             rot = true;
-            // rotation = rotateZ(-ROLL_SENSITIVITY);
-            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-            //     rotation[1][0],rotation[1][1],rotation[1][2],
-            //     rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            // eye = mult(rotation,eye)
-            // at = mult(rotation,at)
-            // up = mult(rotation,up)
+
         }
         else if (ROLL_ANGLE- (ROLL_SENSITIVITY) >=0 && (e.key === "e" || e.key === "E")) {
             ROLL_ANGLE = ROLL_ANGLE - (ROLL_CONTROL ?(ROLL_SENSITIVITY) : 0);
             ROLL += ROLL_SENSITIVITY;    
             rot = true;        
-            // rotation = rotateZ(ROLL_SENSITIVITY);
-            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-            //     rotation[1][0],rotation[1][1],rotation[1][2],
-            //     rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            // eye = mult(rotation,eye)
-            // at = mult(rotation,at)
-            // up = mult(rotation,up)
+
         }
     
         else if (e.key === "1" && LEFT + SHIFT_SENSITIVITY<= 0){ 
@@ -345,25 +303,28 @@ var z_max = TERRAIN_BOUNDS;
 
 var loop = function() {
     
-    distance = i / 60;
+    distance = FLYING_SPEED/60;
+    
     if (rot == true){
-    rotation = mult(rotateZ(ROLL),mult(rotateY(YAW),rotateX(PITCH)));
+        rotation = mult(rotateZ(ROLL),mult(rotateY(YAW),rotateX(PITCH)));
+        
+        rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+            rotation[1][0],rotation[1][1],rotation[1][2],
+            rotation[2][0],rotation[2][1],rotation[2][2],);
     
-    rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-        rotation[1][0],rotation[1][1],rotation[1][2],
-        rotation[2][0],rotation[2][1],rotation[2][2],);
+        eye = mult(rotation,eye)
+        at = mult(rotation,at)
+        up = mult(rotation,up)  
+        
+        ROLL, YAW, PITCH = 0,0,0;
+        rotation = identityMatrix;
+        rot = false;
+        }
 
-    eye = mult(rotation,eye)
-    at = mult(rotation,at)
-    up = mult(rotation,up)  
-    
-    ROLL, YAW, PITCH = 0,0,0;
-    rotation = identityMatrix;
-    rot = false;
-    }
     eye = add(eye, mult(distance, normalize(at)));
     at = add(at, mult(distance, normalize(at)));
 
+    
     // console.log(updatedEye[2]);
 
     if (eye[2] < z_threshold) {
@@ -389,7 +350,7 @@ var loop = function() {
     gl.uniformMatrix4fv(matViewUniformLocation, false, flatten(viewMatrix)); // Send new data to GPU
     gl.uniformMatrix4fv(matWorldUniformLocation, false, flatten(worldMatrix));
 
-    i+= FLYING_SPEED;
+    i+= 1;
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
