@@ -46,6 +46,12 @@ let up = vec3 (0,1,0);
 
 let view = "points";
 let shade = "Phong"
+
+var points = [];
+var colors = [];
+var matrix = [];
+var temp = [];
+
 // Init WebGL
 gl.viewport(0, 0, canvas.width, canvas.height);
 gl.clearColor(0.75, 0.85, 0.8, 1.0);
@@ -67,6 +73,8 @@ else{
     program = initShaders(gl, "vertex-shader", "fragment-shader");
 }
 gl.useProgram(program);
+
+initGPUPipeline();
 
 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -207,10 +215,7 @@ window.onload = () => {
     }
 }
 
-var points = [];
-var colors = [];
-var matrix = [];
-var temp = [];
+
 
 let i = 0;
 
@@ -396,22 +401,27 @@ var loop = function() {
 id = requestAnimationFrame(loop);
 
 
-function sendDataToGPU() {
-    // Send vertex data to GPU
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
+function initGPUPipeline() {
+    // gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
 
     var vPosition = gl.getAttribLocation(program, "vPosition");
     gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
-
     var vNormal = gl.getAttribLocation(program, "vNormal");
     gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vNormal);
+}
+
+    
+
+function sendDataToGPU() {
+    // Send vertex data to GPU
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.DYNAMIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
 }
 
 function round(n) {
