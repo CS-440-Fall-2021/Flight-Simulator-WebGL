@@ -14,12 +14,13 @@
 
         uniform vec4 colorValue;
 
-        out vec4 fragColor;
+        out vec4 fragPos;
 
         void main() {
-            gl_PointSize = 2.0;
+            gl_PointSize = 1.0;
             gl_Position = mProj * mView * mWorld * vec4(vPosition, 1.0);
-            fragColor = colorValue;
+            
+            fragPos = vec4(vPosition,1.0);
         }
     </script>
     
@@ -28,11 +29,26 @@
 
         precision highp float;
 
-        in vec4 fragColor;
+        in vec4 fragPos;
         out vec4 vertexColor;
 
         void main() {
-            vertexColor = fragColor;
+            
+            if (fragPos[1] == 0.0){
+                vertexColor = vec4(0,0,1,1);
+            }
+            else {
+                if (fragPos[1]> 0.0 && fragPos[1]< 0.4){
+                
+                    float alpha = float(fragPos[1])/0.4;
+                    vertexColor = alpha * vec4(0,1,0,1) + (1.0 - alpha)* vec4(214/255,91/255, 43/255, 1.0); 
+                }
+                else{
+                    float alpha = fragPos[1]-0.4/1.0;
+                    vertexColor = alpha * vec4(214/255, 91/255, 43/255, 1.0) + (1.0 - alpha)* vec4(1.0, 1.0, 1.0, 1.0); 
+                    
+                }
+            }
         }
     </script>
 
