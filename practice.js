@@ -11,7 +11,7 @@ let TERRAIN_DETAIL_LEVEL = 200;
 let MESH_ELEVATION = 0;
 let TERRAIN_BOUNDS = 25;
 let PERLIN_SCALING_FACTOR = 2.5;
-let NOISE_SPACER = 1;
+let NOISE_SPACER = 1.2;
 
 let RIGHT = 8;
 let LEFT = -7;
@@ -21,15 +21,17 @@ let NEAR = 15;
 let FAR = -30.0;
 
 let SHIFT_SENSITIVITY = 1;
-
-let YAW_SENSITIVITY = 0.05
+let YAW = 0;
+let YAW_SENSITIVITY = 0.1;
 let YAW_CONTROL = true;
 let YAW_ANGLE = 0;
-
+let rot = false;
+let PITCH = 0;
 let PITCH_SENSITIVITY = 0.1;
 let PITCH_CONTROL = true;
 let PITCH_ANGLE = 0;
 
+let ROLL = 0;
 let ROLL_SENSITIVITY = 0.1;
 let ROLL_CONTROL = true;
 let ROLL_ANGLE = 90;
@@ -106,79 +108,85 @@ window.onload = () => {
 
         if (YAW_ANGLE - (YAW_SENSITIVITY)> -90  &&  (e.key === "a" || e.key === "A")) {
             YAW_ANGLE = YAW_ANGLE - (YAW_CONTROL ? (YAW_SENSITIVITY) : 0);
+            YAW += YAW_SENSITIVITY
+            rot = true;
+            // rotation = rotateY(YAW_SENSITIVITY);
+            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+            //     rotation[1][0],rotation[1][1],rotation[1][2],
+            //     rotation[2][0],rotation[2][1],rotation[2][2],)
             
-            rotation = rotateY(YAW_SENSITIVITY);
-            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-                rotation[1][0],rotation[1][1],rotation[1][2],
-                rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            eye = mult(rotation,eye)
-            at = mult(rotation,at)
-            up = mult(rotation,up)
+            // eye = mult(rotation,eye)
+            // at = mult(rotation,at)
+            // up = mult(rotation,up)
         }
         else if (YAW_ANGLE + (YAW_SENSITIVITY) < 90 && (e.key === "d" || e.key === "D")) {
             YAW_ANGLE = YAW_ANGLE + (YAW_CONTROL ? (YAW_SENSITIVITY) : 0);
+            YAW -= YAW_SENSITIVITY
+            rot = true;
+            // rotation = rotateY(-YAW_SENSITIVITY);
+            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+            //     rotation[1][0],rotation[1][1],rotation[1][2],
+            //     rotation[2][0],rotation[2][1],rotation[2][2],)
             
-            rotation = rotateY(-YAW_SENSITIVITY);
-            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-                rotation[1][0],rotation[1][1],rotation[1][2],
-                rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            eye = mult(rotation,eye)
-            at = mult(rotation,at)
-            up = mult(rotation,up)
+            // eye = mult(rotation,eye)
+            // at = mult(rotation,at)
+            // up = mult(rotation,up)
         }
         else if (PITCH_ANGLE + (PITCH_SENSITIVITY) < 90 &&
-            (e.key === "w" || e.key === "W")) 
+            (e.key === "s" || e.key === "S")) 
             {
             PITCH_ANGLE = PITCH_ANGLE + (PITCH_CONTROL ? (PITCH_SENSITIVITY) : 0);
-
-            rotation = rotateX(-PITCH_SENSITIVITY);
-            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-                rotation[1][0],rotation[1][1],rotation[1][2],
-                rotation[2][0],rotation[2][1],rotation[2][2],)
+            PITCH -= PITCH_SENSITIVITY;
+            rot = true;
+            // rotation = rotateX(-PITCH_SENSITIVITY);
+            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+            //     rotation[1][0],rotation[1][1],rotation[1][2],
+            //     rotation[2][0],rotation[2][1],rotation[2][2],)
             
-            eye = mult(rotation,eye)
-            at = mult(rotation,at)
-            up = mult(rotation,up)  
+            // eye = mult(rotation,eye)
+            // at = mult(rotation,at)
+            // up = mult(rotation,up)  
  
         }
-        else if (PITCH_ANGLE - (PITCH_SENSITIVITY) > -90 && (e.key === "s" || e.key === "S")) {
+        else if (PITCH_ANGLE - (PITCH_SENSITIVITY) > -90 && (e.key === "w" || e.key === "W")) {
             
             PITCH_ANGLE = PITCH_ANGLE - (PITCH_CONTROL ? (PITCH_SENSITIVITY) : 0);
+            PITCH += PITCH_SENSITIVITY;
+            rot = true;
+            // rotation = rotateX(PITCH_SENSITIVITY);
+            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+            //     rotation[1][0],rotation[1][1],rotation[1][2],
+            //     rotation[2][0],rotation[2][1],rotation[2][2],)
             
-            rotation = rotateX(PITCH_SENSITIVITY);
-            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-                rotation[1][0],rotation[1][1],rotation[1][2],
-                rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            eye = mult(rotation,eye)
-            at = mult(rotation,at) 
-            up = mult(rotation,up)  
+            // eye = mult(rotation,eye)
+            // at = mult(rotation,at) 
+            // up = mult(rotation,up)  
         }
         else if (ROLL_ANGLE + (ROLL_SENSITIVITY) <= 180 && (e.key === "q" || e.key === "Q")) {
             ROLL_ANGLE = ROLL_ANGLE + (ROLL_CONTROL ? (ROLL_SENSITIVITY) : 0);
+            ROLL -= ROLL_SENSITIVITY;
+            rot = true;
+            // rotation = rotateZ(-ROLL_SENSITIVITY);
+            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+            //     rotation[1][0],rotation[1][1],rotation[1][2],
+            //     rotation[2][0],rotation[2][1],rotation[2][2],)
             
-            rotation = rotateZ(-ROLL_SENSITIVITY);
-            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-                rotation[1][0],rotation[1][1],rotation[1][2],
-                rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            eye = mult(rotation,eye)
-            at = mult(rotation,at)
-            up = mult(rotation,up)
+            // eye = mult(rotation,eye)
+            // at = mult(rotation,at)
+            // up = mult(rotation,up)
         }
         else if (ROLL_ANGLE- (ROLL_SENSITIVITY) >=0 && (e.key === "e" || e.key === "E")) {
             ROLL_ANGLE = ROLL_ANGLE - (ROLL_CONTROL ?(ROLL_SENSITIVITY) : 0);
+            ROLL += ROLL_SENSITIVITY;    
+            rot = true;        
+            // rotation = rotateZ(ROLL_SENSITIVITY);
+            // rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+            //     rotation[1][0],rotation[1][1],rotation[1][2],
+            //     rotation[2][0],rotation[2][1],rotation[2][2],)
             
-            rotation = rotateZ(ROLL_SENSITIVITY);
-            rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
-                rotation[1][0],rotation[1][1],rotation[1][2],
-                rotation[2][0],rotation[2][1],rotation[2][2],)
-            
-            eye = mult(rotation,eye)
-            at = mult(rotation,at)
-            up = mult(rotation,up)
+            // eye = mult(rotation,eye)
+            // at = mult(rotation,at)
+            // up = mult(rotation,up)
         }
     
         else if (e.key === "1" && LEFT + SHIFT_SENSITIVITY<= 0){ 
@@ -251,7 +259,10 @@ function get_patch(x_min, x_max, z_min, z_max){
     var z_interval = (z_max - z_min)/TERRAIN_DETAIL_LEVEL;
     
     var temp_points = [];
+    var temp_normals = [];
     var _points = [];
+    var _normals = [];
+    var _matrix_normals= [];
     var _matrix = [];
 
     for (let j= z_max; j > z_min; j = j - z_interval){
@@ -280,26 +291,31 @@ function get_patch(x_min, x_max, z_min, z_max){
             
             A_norm = cross(subtract(B, A), subtract(D, A))
             B_norm = cross(subtract(A, B), subtract(C, B))
-            c_norm = cross(subtract(B,C), subtract(D,C))
+            C_norm = cross(subtract(B,C), subtract(D,C))
             D_norm = cross(subtract(A,D),subtract(C,D))
 
+            temp_normals.push(B_norm,A_norm,D_norm, C_norm, B_norm, D_norm);
             temp_points.push(B_m,A_m,D_m,C_m,B_m,D_m);
             _points.push(B,A,D,B,C,D);
+            _normals.push(B_norm,A_norm,D_norm, C_norm, B_norm, D_norm);
             
         }
         _matrix.push(temp_points);
+        _matrix_normals.push(temp_normals);
         // console.log(temp_points);
         temp_points = [];
+        temp_normals = [];
     }
-    return [_points, _matrix]
+    return [_points, _matrix, _normals, _matrix_normals]
 }
 
 var result = get_patch(-TERRAIN_BOUNDS, TERRAIN_BOUNDS, -TERRAIN_BOUNDS, TERRAIN_BOUNDS);
 points = [...result[0]];
 matrix = [...result[1]];
-
+normals = [...result[2]];
+matrix_normals = [...result[3]];
 temp = [...points];
-
+tempnor = [...normals];
 
 
 var matWorldUniformLocation = gl.getUniformLocation(program, "mWorld"); // deals with rotation
@@ -330,13 +346,27 @@ var z_max = TERRAIN_BOUNDS;
 var loop = function() {
     
     distance = i / 60;
+    if (rot == true){
+    rotation = mult(rotateZ(ROLL),mult(rotateY(YAW),rotateX(PITCH)));
+    
+    rotation = mat3(rotation[0][0],rotation[0][1],rotation[0][2],
+        rotation[1][0],rotation[1][1],rotation[1][2],
+        rotation[2][0],rotation[2][1],rotation[2][2],);
 
-    updatedEye = add(eye, mult(distance, normalize(at)));
-    updatedAt = add(at, mult(distance, normalize(at)));
+    eye = mult(rotation,eye)
+    at = mult(rotation,at)
+    up = mult(rotation,up)  
+    
+    ROLL, YAW, PITCH = 0,0,0;
+    rotation = identityMatrix;
+    rot = false;
+    }
+    eye = add(eye, mult(distance, normalize(at)));
+    at = add(at, mult(distance, normalize(at)));
 
     // console.log(updatedEye[2]);
 
-    if (updatedEye[2] < z_threshold) {
+    if (eye[2] < z_threshold) {
         
         terrain_number++;
 
@@ -352,7 +382,7 @@ var loop = function() {
         z_threshold = z_threshold - (2 * TERRAIN_BOUNDS)
     }
     
-    viewMatrix = lookAt(updatedEye, updatedAt, up);
+    viewMatrix = lookAt(eye, at, up);
     projMatrix = frustum(LEFT, RIGHT, BOTTOM , TOP , NEAR , FAR);
 
     gl.uniformMatrix4fv(matProjUniformLocation, gl.FALSE, flatten(projMatrix));              
@@ -376,21 +406,16 @@ var loop = function() {
         colorValue = vec4(0.75, 0.75, 0.75, 1.0);
         gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2], colorValue[3]);
 
-    // temp = points;
-        for (let i = 0; i < matrix.length; i++) {
-            points = matrix[i];
-            sendDataToGPU();
-            gl.drawArrays(gl.LINE_STRIP, 0, points.length);
-        }
+
     }
-    // gl.drawArrays(gl.TRIANGLES, 0, points.length);
+    
 
     else if (view === "wireframe"){
     // Drawing Mesh
         colorValue = vec4(0.75, 0.75, 0.75, 1.0);
         gl.uniform4f(colorValueUniformLocation, colorValue[0], colorValue[1], colorValue[2], colorValue[3]);
 
-        // temp = points;
+        
         for (let i = 0; i < matrix.length; i++) {
             points = matrix[i];
             sendDataToGPU();

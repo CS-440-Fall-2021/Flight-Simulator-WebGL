@@ -41,11 +41,11 @@
                 if (fragPos[1]> 0.0 && fragPos[1]< 0.4){
                 
                     float alpha = float(fragPos[1])/0.4;
-                    vertexColor = alpha * vec4(0,1,0,1) + (1.0 - alpha)* vec4(214/255,91/255, 43/255, 1.0); 
+                    vertexColor = alpha * vec4(214/255,91/255, 43/255, 1.0) + (1.0 - alpha)* vec4(0.0, 1.0, 0.0, 1.0); 
                 }
                 else{
                     float alpha = fragPos[1]-0.4/1.0;
-                    vertexColor = alpha * vec4(214/255, 91/255, 43/255, 1.0) + (1.0 - alpha)* vec4(1.0, 1.0, 1.0, 1.0); 
+                    vertexColor = alpha * vec4(1.0, 1.0, 1.0, 1.0) + (1.0 - alpha)* vec4(214/255, 91/255, 43/255, 1.0); 
                     
                 }
             }
