@@ -45,7 +45,7 @@ let at = vec3(0,0,-1);
 let up = vec3 (0,1,0);
 
 let view = "points";
-let shade = "Phong"
+let shade = "Smooth"
 
 var points = [];
 var colors = [];
@@ -71,6 +71,9 @@ gl.polygonOffset(1,1);
 gl.enable(gl.POLYGON_OFFSET_FILL);
 if (shade === "Phong"){
     program = initShaders(gl, "vertex-shader-phong","fragment-shader-phong")
+}
+else if (shade === "Smooth"){
+    program = initShaders(gl, "vertex-shader-smooth","fragment-shader-smooth")
 }
 else{
     program = initShaders(gl, "vertex-shader", "fragment-shader");
