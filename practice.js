@@ -222,6 +222,12 @@ window.onload = () => {
                     view === "faces" ? "points": "error"
             
         }
+        else if (e.key === "C" || e.key === "c" ){
+            view = view === "Phong" ? "Smooth":
+                    view === "Smooth" ? "Flat" :
+                    view === "Flat" ? "Phong": "error"
+            
+        }
     }
 }
 
